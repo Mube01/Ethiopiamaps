@@ -62,7 +62,7 @@ export default function Header() {
           onClick={closeMobileMenu}
           className="group shrink-0"
         >
-          <div className="serif text-[30px] font-black tracking-[0.04em]">
+          <div className="serif text-[18px] md:text-[30px] font-black tracking-[0.04em]">
             ETHIOPIA MAPS
           </div>
         </Link>
