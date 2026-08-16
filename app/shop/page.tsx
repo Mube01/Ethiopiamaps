@@ -76,7 +76,13 @@ export default function ShopPage() {
   const [filterOpen, setFilterOpen] =
     useState(false);
 
+  const [searchFocused, setSearchFocused] =
+    useState(false);
+
   const filterRef =
+    useRef<HTMLDivElement>(null);
+
+  const searchRef =
     useRef<HTMLDivElement>(null);
 
   const [appliedFilters, setAppliedFilters] =
@@ -93,8 +99,11 @@ export default function ShopPage() {
     });
 
   /*
-   * Fetch artworks from MongoDB
+   * ----------------------------------------------------------
+   * FETCH ARTWORKS
+   * ----------------------------------------------------------
    */
+
   useEffect(() => {
     async function fetchArtworks() {
       try {
@@ -127,8 +136,11 @@ export default function ShopPage() {
   }, []);
 
   /*
-   * Close filter when clicking outside
+   * ----------------------------------------------------------
+   * CLOSE FILTER WHEN CLICKING OUTSIDE
+   * ----------------------------------------------------------
    */
+
   useEffect(() => {
     function handleClickOutside(
       event: MouseEvent
@@ -141,14 +153,21 @@ export default function ShopPage() {
       ) {
         setFilterOpen(false);
       }
+
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(
+          event.target as Node
+        )
+      ) {
+        setSearchFocused(false);
+      }
     }
 
-    if (filterOpen) {
-      document.addEventListener(
-        "mousedown",
-        handleClickOutside
-      );
-    }
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
 
     return () => {
       document.removeEventListener(
@@ -156,28 +175,227 @@ export default function ShopPage() {
         handleClickOutside
       );
     };
-  }, [filterOpen]);
+  }, []);
 
   /*
-   * Filter artworks
+   * ----------------------------------------------------------
+   * NORMALIZE SEARCH
+   *
+   * Converts:
+   * " Addis   Ababa "
+   * into:
+   * "addis ababa"
+   * ----------------------------------------------------------
    */
+
+  const normalizeSearch = (
+    value: string
+  ) => {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ");
+  };
+
+  /*
+   * ----------------------------------------------------------
+   * SEARCH SUGGESTIONS
+   *
+   * Suggestions are based ONLY on artwork titles.
+   *
+   * This prevents descriptions from causing unrelated
+   * artworks to appear in predictive search.
+   * ----------------------------------------------------------
+   */
+
+  const searchSuggestions = useMemo(() => {
+    const query =
+      normalizeSearch(search);
+
+    if (!query) {
+      return [];
+    }
+
+    const queryWords =
+      query.split(" ");
+
+    return works
+      .map((work) => {
+        const title =
+          normalizeSearch(work.title);
+
+        const titleWords =
+          title.split(" ");
+
+        let score = 0;
+
+        /*
+         * Exact title
+         */
+        if (title === query) {
+          score += 1000;
+        }
+
+        /*
+         * Title starts with the search
+         */
+        if (title.startsWith(query)) {
+          score += 500;
+        }
+
+        /*
+         * Individual words start with the search words
+         *
+         * Example:
+         * "Addis Aba"
+         *
+         * matches:
+         * "Addis Ababa"
+         */
+        for (const queryWord of queryWords) {
+          if (!queryWord) continue;
+
+          const exactWord =
+            titleWords.some(
+              (word) => word === queryWord
+            );
+
+          const partialWord =
+            titleWords.some(
+              (word) =>
+                word.startsWith(queryWord)
+            );
+
+          if (exactWord) {
+            score += 150;
+          } else if (partialWord) {
+            score += 100;
+          }
+        }
+
+        /*
+         * Individual title contains the search
+         */
+        if (title.includes(query)) {
+          score += 300;
+        }
+
+        return {
+          work,
+          score,
+        };
+      })
+      .filter(
+        ({ score }) => score > 0
+      )
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+
+        return a.work.title.localeCompare(
+          b.work.title,
+          undefined,
+          {
+            sensitivity: "base",
+          }
+        );
+      })
+      .slice(0, 6)
+      .map(({ work }) => work);
+  }, [search, works]);
+
+  /*
+   * ----------------------------------------------------------
+   * FILTER ARTWORKS
+   * ----------------------------------------------------------
+   */
+
   const filteredWorks = useMemo(() => {
+    const searchTerm =
+      normalizeSearch(search);
+
     return works
       .filter((work) => {
-        const searchTerm =
-          search.toLowerCase().trim();
+        /*
+         * ----------------------------------------------------
+         * SEARCH MATCHING
+         *
+         * IMPORTANT:
+         *
+         * Search is primarily based on TITLE.
+         *
+         * We do NOT search the entire description by default.
+         * This prevents:
+         *
+         * "Addis Ababa"
+         *
+         * from returning several unrelated artworks simply
+         * because their descriptions mention Addis.
+         * ----------------------------------------------------
+         */
 
-        const searchMatch =
-          searchTerm === "" ||
-          work.title
-            .toLowerCase()
-            .includes(searchTerm) ||
-          work.description
-            .toLowerCase()
-            .includes(searchTerm) ||
-          work.year
-            .toString()
-            .includes(searchTerm);
+        let searchMatch = true;
+
+        if (searchTerm) {
+          const title =
+            normalizeSearch(work.title);
+
+          /*
+           * Exact title
+           */
+          if (title === searchTerm) {
+            searchMatch = true;
+          }
+
+          /*
+           * Title contains complete search phrase
+           *
+           * Example:
+           * "Addis" -> "Addis Ababa"
+           */
+          else if (
+            title.includes(searchTerm)
+          ) {
+            searchMatch = true;
+          }
+
+          /*
+           * Word-by-word partial matching
+           *
+           * Example:
+           *
+           * "Addis Aba"
+           *
+           * matches:
+           *
+           * "Addis Ababa"
+           */
+          else {
+            const queryWords =
+              searchTerm.split(" ");
+
+            const titleWords =
+              title.split(" ");
+
+            searchMatch =
+              queryWords.every(
+                (queryWord) =>
+                  titleWords.some(
+                    (titleWord) =>
+                      titleWord.startsWith(
+                        queryWord
+                      )
+                  )
+              );
+          }
+        }
+
+        /*
+         * ----------------------------------------------------
+         * AVAILABILITY
+         * ----------------------------------------------------
+         */
 
         const availabilityMatch =
           appliedFilters.availability ===
@@ -189,10 +407,22 @@ export default function ShopPage() {
             "sold" &&
             !work.available);
 
+        /*
+         * ----------------------------------------------------
+         * TYPE
+         * ----------------------------------------------------
+         */
+
         const typeMatch =
           appliedFilters.type === "all" ||
           work.type ===
             appliedFilters.type;
+
+        /*
+         * ----------------------------------------------------
+         * PRICE
+         * ----------------------------------------------------
+         */
 
         const minimumPrice =
           appliedFilters.minPrice === ""
@@ -208,9 +438,10 @@ export default function ShopPage() {
                 appliedFilters.maxPrice
               );
 
-        const prices = work.sizes.map(
-          (size) => size.price
-        );
+        const prices =
+          work.sizes.map(
+            (size) => size.price
+          );
 
         const startingPrice =
           prices.length > 0
@@ -228,20 +459,72 @@ export default function ShopPage() {
           priceMatch
         );
       })
-      .sort((a, b) =>
-        a.title.localeCompare(
+      .sort((a, b) => {
+        /*
+         * When searching, put the strongest title
+         * match first.
+         */
+
+        if (searchTerm) {
+          const aTitle =
+            normalizeSearch(a.title);
+
+          const bTitle =
+            normalizeSearch(b.title);
+
+          const aExact =
+            aTitle === searchTerm;
+
+          const bExact =
+            bTitle === searchTerm;
+
+          if (aExact && !bExact) {
+            return -1;
+          }
+
+          if (!aExact && bExact) {
+            return 1;
+          }
+
+          const aStarts =
+            aTitle.startsWith(
+              searchTerm
+            );
+
+          const bStarts =
+            bTitle.startsWith(
+              searchTerm
+            );
+
+          if (aStarts && !bStarts) {
+            return -1;
+          }
+
+          if (!aStarts && bStarts) {
+            return 1;
+          }
+        }
+
+        return a.title.localeCompare(
           b.title,
           undefined,
           {
             sensitivity: "base",
           }
-        )
-      );
-  }, [search, appliedFilters, works]);
+        );
+      });
+  }, [
+    search,
+    appliedFilters,
+    works,
+  ]);
 
   /*
-   * Local artworks
+   * ----------------------------------------------------------
+   * LOCAL ARTWORKS
+   * ----------------------------------------------------------
    */
+
   const localWorks = useMemo(
     () =>
       filteredWorks.filter(
@@ -252,8 +535,11 @@ export default function ShopPage() {
   );
 
   /*
-   * International artworks
+   * ----------------------------------------------------------
+   * INTERNATIONAL ARTWORKS
+   * ----------------------------------------------------------
    */
+
   const internationalWorks = useMemo(
     () =>
       filteredWorks.filter(
@@ -264,8 +550,11 @@ export default function ShopPage() {
   );
 
   /*
-   * Apply filters
+   * ----------------------------------------------------------
+   * APPLY FILTERS
+   * ----------------------------------------------------------
    */
+
   const applyFilters = () => {
     setAppliedFilters({
       availability,
@@ -278,8 +567,11 @@ export default function ShopPage() {
   };
 
   /*
-   * Clear filters
+   * ----------------------------------------------------------
+   * CLEAR FILTERS
+   * ----------------------------------------------------------
    */
+
   const clearFilters = () => {
     setAvailability("all");
     setType("all");
@@ -295,55 +587,71 @@ export default function ShopPage() {
   };
 
   const hasActiveFilters =
-    appliedFilters.availability !== "all" ||
+    appliedFilters.availability !==
+      "all" ||
     appliedFilters.type !== "all" ||
     appliedFilters.minPrice !== "" ||
     appliedFilters.maxPrice !== "";
 
   /*
-   * Loading skeleton
+   * ----------------------------------------------------------
+   * SELECT SEARCH SUGGESTION
+   * ----------------------------------------------------------
    */
+
+  const selectSuggestion = (
+    work: Artwork
+  ) => {
+    setSearch(work.title);
+    setSearchFocused(false);
+  };
+
+  /*
+   * ----------------------------------------------------------
+   * LOADING SKELETON
+   * ----------------------------------------------------------
+   */
+
   const renderLoadingSkeleton = () => {
     return (
       <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map(
-          (_, index) => (
-            <div
-              key={index}
-              className="animate-pulse"
-            >
-              {/* Image skeleton */}
-              <div className="aspect-[4/5] bg-black/[0.06]" />
+        {Array.from({
+          length: 8,
+        }).map((_, index) => (
+          <div
+            key={index}
+            className="animate-pulse"
+          >
+            <div className="aspect-[4/5] bg-black/[0.06]" />
 
-              {/* Artwork details skeleton */}
-              <div className="mt-5 flex items-start justify-between">
-                <div className="flex-1">
-                  {/* Title */}
-                  <div className="h-7 w-2/3 bg-black/[0.06]" />
+            <div className="mt-5 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="h-7 w-2/3 bg-black/[0.06]" />
 
-                  {/* Price */}
-                  <div className="mt-3 h-4 w-1/2 bg-black/[0.05]" />
-                </div>
-
-                {/* Year */}
-                <div className="ml-4 h-3 w-10 bg-black/[0.05]" />
+                <div className="mt-3 h-4 w-1/2 bg-black/[0.05]" />
               </div>
+
+              <div className="ml-4 h-3 w-10 bg-black/[0.05]" />
             </div>
-          )
-        )}
+          </div>
+        ))}
       </div>
     );
   };
 
   /*
-   * Artwork card
+   * ----------------------------------------------------------
+   * ARTWORK CARD
+   * ----------------------------------------------------------
    */
+
   const renderArtwork = (
     work: Artwork
   ) => {
-    const prices = work.sizes.map(
-      (size) => size.price
-    );
+    const prices =
+      work.sizes.map(
+        (size) => size.price
+      );
 
     const startingPrice =
       prices.length > 0
@@ -356,7 +664,6 @@ export default function ShopPage() {
         href={`/shop/${work.slug}`}
         className="group block"
       >
-        {/* Artwork image */}
         <div className="relative aspect-[4/5] overflow-hidden bg-[var(--warm-paper)]">
           <Image
             src={
@@ -366,10 +673,9 @@ export default function ShopPage() {
             alt={work.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-700 ease-out scale-[1.15] group-hover:scale-[1.25]"
+            className="scale-[1.15] object-cover transition-transform duration-700 ease-out group-hover:scale-[1.25]"
           />
 
-          {/* Sold badge */}
           {!work.available && (
             <div className="absolute left-4 top-4 bg-black/70 px-3 py-2 text-[9px] uppercase tracking-[0.15em] text-white backdrop-blur-sm">
               Sold
@@ -377,7 +683,6 @@ export default function ShopPage() {
           )}
         </div>
 
-        {/* Artwork details */}
         <div className="mt-5 flex justify-between">
           <div>
             <h2 className="serif text-2xl transition-colors duration-300 group-hover:text-[var(--ochre)]">
@@ -398,6 +703,12 @@ export default function ShopPage() {
     );
   };
 
+  /*
+   * ----------------------------------------------------------
+   * PAGE
+   * ----------------------------------------------------------
+   */
+
   return (
     <main className="min-h-screen bg-[#FAF9F6]">
       <Header />
@@ -405,10 +716,12 @@ export default function ShopPage() {
       {/* =========================
           INTRO
       ========================== */}
+
       <section className="container-gallery pb-8 pt-24 md:pb-10 md:pt-32">
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
 
           {/* Collection title */}
+
           <div>
             <p className="mt-8 text-[15px] uppercase tracking-[0.3em] text-[var(--ochre)] sm:-mt-7">
               The Collection
@@ -416,17 +729,30 @@ export default function ShopPage() {
           </div>
 
           {/* Search + Filter */}
+
           <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-end md:w-auto">
 
             {/* SEARCH */}
-            <div className="relative w-full sm:w-[280px]">
+
+            <div
+              ref={searchRef}
+              className="relative w-full sm:w-[280px]"
+            >
               <input
                 type="text"
                 value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value)
+                onChange={(e) => {
+                  setSearch(
+                    e.target.value
+                  );
+
+                  setSearchFocused(true);
+                }}
+                onFocus={() =>
+                  setSearchFocused(true)
                 }
                 placeholder="Search artworks..."
+                autoComplete="off"
                 className="w-full rounded-sm border border-black/20 bg-white py-3 pl-3 pr-10 text-sm outline-none transition-colors placeholder:text-black/40 focus:border-[var(--ochre)]"
               />
 
@@ -435,9 +761,47 @@ export default function ShopPage() {
                 strokeWidth={1.5}
                 className="absolute right-3 top-3 text-black/50"
               />
+
+              {/* =========================
+                  PREDICTIVE SEARCH
+              ========================== */}
+
+              {searchFocused &&
+                search.trim() !== "" &&
+                searchSuggestions.length >
+                  0 && (
+                  <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden border border-black/10 bg-[#FAF9F6] shadow-xl">
+
+                    {searchSuggestions.map(
+                      (work) => (
+                        <button
+                          key={work._id}
+                          type="button"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+
+                            selectSuggestion(
+                              work
+                            );
+                          }}
+                          className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-black/[0.04]"
+                        >
+                          <span className="serif text-base">
+                            {work.title}
+                          </span>
+
+                          <span className="text-[9px] uppercase tracking-[0.15em] text-[var(--muted-text)]">
+                            {work.type}
+                          </span>
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* FILTER */}
+
             <div
               ref={filterRef}
               className="relative w-full sm:w-auto"
@@ -478,10 +842,12 @@ export default function ShopPage() {
               </button>
 
               {/* FILTER PANEL */}
+
               {filterOpen && (
                 <div className="absolute right-0 top-full z-40 mt-3 w-full min-w-[290px] border border-black/10 bg-[#FAF9F6] p-6 shadow-xl sm:w-[340px]">
 
                   {/* AVAILABILITY */}
+
                   <div>
                     <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ochre)]">
                       Availability
@@ -503,6 +869,7 @@ export default function ShopPage() {
                           }
                           className="h-4 w-4 accent-[var(--ochre)]"
                         />
+
                         <span>All</span>
                       </label>
 
@@ -521,6 +888,7 @@ export default function ShopPage() {
                           }
                           className="h-4 w-4 accent-[var(--ochre)]"
                         />
+
                         <span>
                           Available
                         </span>
@@ -541,6 +909,7 @@ export default function ShopPage() {
                           }
                           className="h-4 w-4 accent-[var(--ochre)]"
                         />
+
                         <span>Sold</span>
                       </label>
                     </div>
@@ -548,7 +917,8 @@ export default function ShopPage() {
 
                   <div className="my-6 border-t border-black/10" />
 
-                  {/* LOCAL / INTERNATIONAL */}
+                  {/* COLLECTION */}
+
                   <div>
                     <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ochre)]">
                       Collection
@@ -567,6 +937,7 @@ export default function ShopPage() {
                           }
                           className="h-4 w-4 accent-[var(--ochre)]"
                         />
+
                         <span>All</span>
                       </label>
 
@@ -582,6 +953,7 @@ export default function ShopPage() {
                           }
                           className="h-4 w-4 accent-[var(--ochre)]"
                         />
+
                         <span>Local</span>
                       </label>
 
@@ -600,6 +972,7 @@ export default function ShopPage() {
                           }
                           className="h-4 w-4 accent-[var(--ochre)]"
                         />
+
                         <span>
                           International
                         </span>
@@ -610,6 +983,7 @@ export default function ShopPage() {
                   <div className="my-6 border-t border-black/10" />
 
                   {/* PRICE */}
+
                   <div>
                     <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ochre)]">
                       Price Range
@@ -661,6 +1035,7 @@ export default function ShopPage() {
                   </div>
 
                   {/* ACTIONS */}
+
                   <div className="mt-7 flex items-center justify-between gap-4">
                     <button
                       type="button"
@@ -688,15 +1063,13 @@ export default function ShopPage() {
       {/* =========================
           WORKS
       ========================== */}
+
       <section className="container-gallery pb-32 pt-0">
 
-        {/* =========================
-            LOADING
-        ========================== */}
+        {/* LOADING */}
+
         {loading ? (
           <div>
-
-            {/* Loading label */}
             <div className="mb-10 flex items-center gap-4">
               <span className="h-px w-8 bg-[var(--ochre)]" />
 
@@ -705,16 +1078,13 @@ export default function ShopPage() {
               </p>
             </div>
 
-            {/* Loading artwork skeletons */}
             {renderLoadingSkeleton()}
           </div>
-
-        ) : filteredWorks.length > 0 ? (
-
+        ) : filteredWorks.length >
+          0 ? (
           <>
-            {/* =========================
-                LOCAL
-            ========================== */}
+            {/* LOCAL */}
+
             {localWorks.length > 0 && (
               <section>
                 <div className="mb-10">
@@ -731,18 +1101,16 @@ export default function ShopPage() {
               </section>
             )}
 
-            {/* =========================
-                DIVIDER
-            ========================== */}
+            {/* DIVIDER */}
+
             {localWorks.length > 0 &&
               internationalWorks.length >
                 0 && (
                 <div className="my-20 border-t border-black/15" />
               )}
 
-            {/* =========================
-                INTERNATIONAL
-            ========================== */}
+            {/* INTERNATIONAL */}
+
             {internationalWorks.length >
               0 && (
               <section>
@@ -760,12 +1128,9 @@ export default function ShopPage() {
               </section>
             )}
           </>
-
         ) : (
+          /* NO RESULTS */
 
-          /* =========================
-             NO RESULTS
-          ========================== */
           <div className="flex min-h-[40vh] items-center justify-center">
             <div className="text-center">
               <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--ochre)]">
@@ -774,15 +1139,18 @@ export default function ShopPage() {
 
               <h2 className="serif mt-4 text-3xl">
                 No artworks match your
-                filters.
+                search.
               </h2>
 
               <button
                 type="button"
-                onClick={clearFilters}
+                onClick={() => {
+                  setSearch("");
+                  clearFilters();
+                }}
                 className="mt-7 border border-black/20 px-6 py-3 text-[10px] uppercase tracking-[0.15em] transition-colors hover:border-[var(--ochre)]"
               >
-                Clear Filters
+                Clear Search
               </button>
             </div>
           </div>

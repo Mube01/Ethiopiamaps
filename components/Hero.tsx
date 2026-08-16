@@ -32,7 +32,7 @@ export default function Hero() {
           transition={{ duration: 1 }}
           className="flex flex-col items-center text-center"
         >
-          <h1 className="serif text-[clamp(48px,6vw,78px)] font-normal leading-none tracking-[-0.035em] text-white">
+          <h1 className="serif text-[clamp(48px,6vw,78px)] font-normal leading-none tracking-[-0.035em] text-white whitespace-nowrap">
             ETHIOPIA MAPS
           </h1>
         </motion.div>
@@ -41,7 +41,7 @@ export default function Hero() {
         <nav className="mt-8 flex items-center gap-8">
           <Link
             href="/about"
-            className="text-[17px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 hover:opacity-50"
+            className="text-[15px] md:text-[17px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 hover:opacity-50"
           >
             About
           </Link>
@@ -50,7 +50,7 @@ export default function Hero() {
 
           <Link
             href="/shop"
-            className="text-[17px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 hover:opacity-50"
+            className="text-[15px] md:text-[17px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 hover:opacity-50"
           >
             Shop
           </Link>
@@ -59,7 +59,7 @@ export default function Hero() {
 
           <Link
             href="/contact"
-            className="text-[17px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 hover:opacity-50"
+            className="text-[15px] md:text-[17px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 hover:opacity-50"
           >
             Contact
           </Link>
