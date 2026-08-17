@@ -416,14 +416,14 @@ export default function ArtworkPage({
               />
 
               <div
-                className={`pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-4 py-2 text-[9px] uppercase tracking-[0.18em] text-white backdrop-blur-sm transition-opacity duration-300 md:block ${
-                  isZoomed
-                    ? "opacity-0"
-                    : "opacity-100"
-                }`}
-              >
-                Move cursor to explore
-              </div>
+  className={`pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 bg-black/60 px-4 py-2 text-[9px] uppercase tracking-[0.18em] text-white backdrop-blur-sm transition-opacity duration-300 md:block ${
+    isZoomed
+      ? "opacity-0"
+      : "opacity-100"
+  }`}
+>
+  Move cursor to explore
+</div>
             </div>
 
             {/* Image Thumbnails */}
