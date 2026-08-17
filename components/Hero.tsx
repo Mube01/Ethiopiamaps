@@ -129,7 +129,7 @@ export default function Hero() {
 
   {/* Behance */}
   <a
-    href="https://www.behance.net/nahomredda1"
+    href="https://www.behance.net/ethiopiamaps"
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Behance"
