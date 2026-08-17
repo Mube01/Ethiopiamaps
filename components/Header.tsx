@@ -51,8 +51,7 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed left-0 top-0 z-50 w-full border-b border-[#8C7355] bg-white">
-      <div className="container-gallery flex h-24 items-center justify-between">
+    <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-[#8C7355] bg-white pt-[env(safe-area-inset-top)]"> <div className="container-gallery flex h-24 items-center justify-between">
 
         {/* =====================================================
             LOGO

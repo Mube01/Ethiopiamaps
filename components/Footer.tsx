@@ -125,7 +125,7 @@ export default function Footer() {
 
                 {/* LinkedIn */}
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/company/ethiopia-maps/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn"
