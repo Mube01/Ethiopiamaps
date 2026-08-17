@@ -553,21 +553,25 @@ export default function ArtworkPage({
             )}
 
             {/* Price */}
-            <div className="mt-8">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted-text)]">
-                Price
-              </p>
+<div className="mt-8">
+  <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted-text)]">
+    Price
+  </p>
 
-              <p className="serif mt-2 text-3xl">
-                ETB{" "}
-                {selectedOption.price.toLocaleString()}
-              </p>
+  <p className="serif mt-2 text-3xl">
+    ETB{" "}
+    {selectedOption.price.toLocaleString()}
+  </p>
 
-              <p className="mt-1 text-[10px] text-black/40">
-                {selectedOption.size} -{" "}
-                {selectedOption.description}
-              </p>
-            </div>
+  <p className="mt-1 text-[10px] text-black/40">
+    {selectedOption.size} -{" "}
+    {selectedOption.description}
+  </p>
+
+  <p className="mt-3 text-[12px] tracking-[0.12em] text-black/85">
+    Delivery within 5 – 7 working days
+  </p>
+</div>
 
             {/* Quantity */}
             {work.available && (

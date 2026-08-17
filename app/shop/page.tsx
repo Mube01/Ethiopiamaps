@@ -39,6 +39,12 @@ type Artwork = {
   cloudinaryPublicId: string;
   images?: ArtworkImage[];
   sizes: ArtworkSize[];
+
+  /*
+   * Optional because older artwork documents may
+   * not have createdAt returned by the API.
+   */
+  createdAt?: string;
 };
 
 type AvailabilityFilter =
@@ -50,6 +56,85 @@ type TypeFilter =
   | "all"
   | "local"
   | "international";
+
+/*
+ * ----------------------------------------------------------
+ * NEW ARTWORK
+ *
+ * An artwork is considered NEW for 30 days.
+ *
+ * If createdAt exists, we use it.
+ *
+ * If createdAt does not exist, we use the timestamp
+ * embedded inside the MongoDB ObjectId.
+ * ----------------------------------------------------------
+ */
+
+const NEW_ARTWORK_DAYS = 30;
+
+function getArtworkCreationDate(
+  work: Artwork
+): Date | null {
+  /*
+   * Prefer createdAt if the API provides it.
+   */
+  if (work.createdAt) {
+    const date = new Date(work.createdAt);
+
+    if (!Number.isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  /*
+   * MongoDB ObjectIds contain their creation timestamp
+   * in their first 8 hexadecimal characters.
+   *
+   * Example:
+   * 68A1B2C3xxxxxxxxxxxxxxxx
+   */
+  if (
+    typeof work._id === "string" &&
+    /^[a-fA-F0-9]{24}$/.test(work._id)
+  ) {
+    const timestamp = parseInt(
+      work._id.substring(0, 8),
+      16
+    );
+
+    if (!Number.isNaN(timestamp)) {
+      return new Date(timestamp * 1000);
+    }
+  }
+
+  return null;
+}
+
+function isNewArtwork(work: Artwork) {
+  const createdAt =
+    getArtworkCreationDate(work);
+
+  if (!createdAt) {
+    return false;
+  }
+
+  const now = Date.now();
+
+  const age =
+    now - createdAt.getTime();
+
+  const thirtyDays =
+    NEW_ARTWORK_DAYS *
+    24 *
+    60 *
+    60 *
+    1000;
+
+  return (
+    age >= 0 &&
+    age < thirtyDays
+  );
+}
 
 export default function ShopPage() {
   const [works, setWorks] =
@@ -658,6 +743,8 @@ export default function ShopPage() {
         ? Math.min(...prices)
         : 0;
 
+    const isNew = isNewArtwork(work);
+
     return (
       <Link
         key={work._id}
@@ -676,8 +763,21 @@ export default function ShopPage() {
             className="scale-[1.15] object-cover transition-transform duration-700 ease-out group-hover:scale-[1.25]"
           />
 
+          {isNew && (
+  <span className="absolute left-3 top-3 z-20 flex items-center gap-2 border border-[var(--ochre)] bg-[var(--ochre)] px-3 py-1.5 text-[8px] font-medium uppercase tracking-[0.2em] text-[#fff] shadow-sm">
+    New
+  </span>
+)}
+
+          {/* SOLD TAG */}
           {!work.available && (
-            <div className="absolute left-4 top-4 bg-black/70 px-3 py-2 text-[9px] uppercase tracking-[0.15em] text-white backdrop-blur-sm">
+            <div
+              className={`absolute left-4 bg-black/70 px-3 py-2 text-[9px] uppercase tracking-[0.15em] text-white backdrop-blur-sm ${
+                isNew
+                  ? "top-[52px]"
+                  : "top-4"
+              }`}
+            >
               Sold
             </div>
           )}
@@ -990,47 +1090,41 @@ export default function ShopPage() {
                     </h3>
 
                     <div className="mt-5 flex items-center gap-3">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-black/40">
-                          ETB
-                        </span>
+      <div className="relative flex-1">
+  <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-xs text-black/40">
+    ETB
+  </span>
 
-                        <input
-                          type="number"
-                          min="0"
-                          value={minPrice}
-                          onChange={(e) =>
-                            setMinPrice(
-                              e.target.value
-                            )
-                          }
-                          placeholder="Min"
-                          className="w-full border border-black/15 bg-white px-12 py-3 text-sm outline-none transition-colors focus:border-[var(--ochre)]"
-                        />
-                      </div>
+  <input
+    type="number"
+    min="0"
+    value={minPrice}
+    onChange={(e) =>
+      setMinPrice(e.target.value)
+    }
+    placeholder="Min"
+    className="price-input w-full border border-black/15 bg-white py-3 pl-12 pr-3 text-sm outline-none transition-colors focus:border-[var(--ochre)]"
+  />
+</div>
 
                       <span className="text-black/30">
                         —
                       </span>
 
                       <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-black/40">
-                          ETB
-                        </span>
+  <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-xs text-black/40">
+    ETB
+  </span>
 
-                        <input
-                          type="number"
-                          min="0"
-                          value={maxPrice}
-                          onChange={(e) =>
-                            setMaxPrice(
-                              e.target.value
-                            )
-                          }
-                          placeholder="Max"
-                          className="w-full border border-black/15 bg-white px-12 py-3 text-sm outline-none transition-colors focus:border-[var(--ochre)]"
-                        />
-                      </div>
+  <input
+    type="number"
+    min="0"
+    value={maxPrice}
+    onChange={(e) => setMaxPrice(e.target.value)}
+    placeholder="Max"
+    className="price-input w-full border border-black/15 bg-white py-3 pl-12 pr-3 text-sm outline-none transition-colors focus:border-[var(--ochre)]"
+  />
+</div>
                     </div>
                   </div>
 

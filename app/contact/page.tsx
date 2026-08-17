@@ -1,9 +1,101 @@
 "use client";
 
+import {
+  FormEvent,
+  useState,
+} from "react";
+
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 
 export default function ContactPage() {
+  const [loading, setLoading] =
+    useState(false);
+
+  const [success, setSuccess] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [formData, setFormData] =
+    useState({
+      name: "",
+      email: "",
+      subject: "",
+      message: "",
+    });
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement
+    >
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+
+    setError("");
+    setSuccess(false);
+  };
+
+  const handleSubmit = async (
+    e: FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+
+    try {
+      const response =
+        await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify(
+            formData
+          ),
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to send your message."
+        );
+      }
+
+      setSuccess(true);
+
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error(
+        "Contact form error:",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#FAF9F6] text-[var(--charcoal)]">
       <Header />
@@ -80,7 +172,9 @@ export default function ContactPage() {
                 </h2>
               </div>
 
-              <form>
+              <form
+                onSubmit={handleSubmit}
+              >
 
                 {/* Name */}
                 <div className="mb-5">
@@ -95,7 +189,15 @@ export default function ContactPage() {
                     id="name"
                     name="name"
                     type="text"
+                    value={
+                      formData.name
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="Your name"
+                    required
+                    disabled={loading}
                     className="
                       h-11
                       w-full
@@ -109,6 +211,8 @@ export default function ContactPage() {
                       transition-colors
                       placeholder:text-black/30
                       focus:border-[var(--ochre)]
+                      disabled:cursor-not-allowed
+                      disabled:opacity-60
                     "
                   />
                 </div>
@@ -126,7 +230,15 @@ export default function ContactPage() {
                     id="email"
                     name="email"
                     type="email"
+                    value={
+                      formData.email
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="your@email.com"
+                    required
+                    disabled={loading}
                     className="
                       h-11
                       w-full
@@ -140,6 +252,8 @@ export default function ContactPage() {
                       transition-colors
                       placeholder:text-black/30
                       focus:border-[var(--ochre)]
+                      disabled:cursor-not-allowed
+                      disabled:opacity-60
                     "
                   />
                 </div>
@@ -157,7 +271,15 @@ export default function ContactPage() {
                     id="subject"
                     name="subject"
                     type="text"
+                    value={
+                      formData.subject
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="How can we help?"
+                    required
+                    disabled={loading}
                     className="
                       h-11
                       w-full
@@ -171,6 +293,8 @@ export default function ContactPage() {
                       transition-colors
                       placeholder:text-black/30
                       focus:border-[var(--ochre)]
+                      disabled:cursor-not-allowed
+                      disabled:opacity-60
                     "
                   />
                 </div>
@@ -188,7 +312,15 @@ export default function ContactPage() {
                     id="message"
                     name="message"
                     rows={4}
+                    value={
+                      formData.message
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="Tell us what's on your mind..."
+                    required
+                    disabled={loading}
                     className="
                       min-h-[110px]
                       w-full
@@ -205,13 +337,32 @@ export default function ContactPage() {
                       transition-colors
                       placeholder:text-black/30
                       focus:border-[var(--ochre)]
+                      disabled:cursor-not-allowed
+                      disabled:opacity-60
                     "
                   />
                 </div>
 
+                {/* Error */}
+                {error && (
+                  <div className="mb-5 border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                {/* Success */}
+                {success && (
+                  <div className="mb-5 border border-[var(--ochre)]/30 bg-[var(--ochre)]/5 px-4 py-3 text-xs leading-5 text-[var(--charcoal)]">
+                    Thank you. Your message has
+                    been sent successfully. We&apos;ll
+                    get back to you soon.
+                  </div>
+                )}
+
                 {/* Submit */}
                 <button
                   type="submit"
+                  disabled={loading}
                   className="
                     h-11
                     w-full
@@ -225,9 +376,13 @@ export default function ContactPage() {
                     transition-all
                     duration-300
                     hover:bg-[var(--ochre)]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
                   "
                 >
-                  Send Message
+                  {loading
+                    ? "Sending..."
+                    : "Send Message"}
                 </button>
 
               </form>
