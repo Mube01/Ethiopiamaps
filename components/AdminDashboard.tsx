@@ -84,21 +84,20 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [editingWork, setEditingWork] =
-    useState<Artwork | null>(null);
+  const [editingWork, setEditingWork] = useState<Artwork | null>(null);
+
   const [search, setSearch] = useState("");
+
   const [loggingOut, setLoggingOut] = useState(false);
 
   // Delete confirmation
-  const [deleteWork, setDeleteWork] =
-    useState<Artwork | null>(null);
+  const [deleteWork, setDeleteWork] = useState<Artwork | null>(null);
 
-  const [deleting, setDeleting] =
-    useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   /**
-   * Redirect the admin to login if the session
-   * has expired or is no longer valid.
+   * Redirect the admin to login if the
+   * session has expired or is no longer valid.
    */
   const handleUnauthorized = () => {
     router.replace("/admin/login");
@@ -107,9 +106,6 @@ export default function AdminDashboard() {
 
   /**
    * Load artworks.
-   *
-   * The browser automatically sends the session
-   * cookie with same-origin requests.
    */
   useEffect(() => {
     let active = true;
@@ -125,10 +121,7 @@ export default function AdminDashboard() {
           credentials: "include",
         });
 
-        if (
-          response.status === 401 ||
-          response.status === 403
-        ) {
+        if (response.status === 401 || response.status === 403) {
           handleUnauthorized();
           return;
         }
@@ -170,15 +163,44 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  const filteredWorks = useMemo(
-    () =>
-      works.filter((work) =>
-        `${work.title} ${work.description} ${work.type}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      ),
-    [search, works]
-  );
+  /**
+   * SEARCH
+   *
+   * Partial / predictive title search.
+   *
+   * Examples:
+   *
+   * "add"  -> Addis
+   * "add"  -> Addis Ababa
+   * "addi" -> Addis Ababa
+   * "aba"  -> Addis Ababa
+   * "gond" -> Gondar
+   *
+   * The search ONLY checks the artwork title.
+   * It does NOT search the description.
+   */
+  const filteredWorks = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    // Empty search = show everything
+    if (!query) {
+      return works;
+    }
+
+    return works.filter((work) => {
+      const title = work.title.trim().toLowerCase();
+
+      // Partial title search.
+      //
+      // This means:
+      // "add" -> "Addis"
+      // "add" -> "Addis Ababa"
+      // "aba" -> "Addis Ababa"
+      //
+      // Only the title is searched.
+      return title.includes(query);
+    });
+  }, [search, works]);
 
   /**
    * Delete artwork after confirmation.
@@ -198,10 +220,7 @@ export default function AdminDashboard() {
         }
       );
 
-      if (
-        response.status === 401 ||
-        response.status === 403
-      ) {
+      if (response.status === 401 || response.status === 403) {
         handleUnauthorized();
         return;
       }
@@ -209,15 +228,12 @@ export default function AdminDashboard() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Delete failed."
-        );
+        throw new Error(data.error || "Delete failed.");
       }
 
       setWorks((current) =>
         current.filter(
-          (work) =>
-            work._id !== deleteWork._id
+          (work) => work._id !== deleteWork._id
         )
       );
 
@@ -238,9 +254,7 @@ export default function AdminDashboard() {
     setShowForm(true);
   };
 
-  const handleSave = async (
-    payload: ArtworkPayload
-  ) => {
+  const handleSave = async (payload: ArtworkPayload) => {
     const response = await fetch(
       editingWork
         ? `/api/artworks/${editingWork._id}`
@@ -255,10 +269,7 @@ export default function AdminDashboard() {
       }
     );
 
-    if (
-      response.status === 401 ||
-      response.status === 403
-    ) {
+    if (response.status === 401 || response.status === 403) {
       handleUnauthorized();
 
       throw new Error(
@@ -279,16 +290,11 @@ export default function AdminDashboard() {
     if (editingWork) {
       setWorks((current) =>
         current.map((item) =>
-          item._id === saved._id
-            ? saved
-            : item
+          item._id === saved._id ? saved : item
         )
       );
     } else {
-      setWorks((current) => [
-        saved,
-        ...current,
-      ]);
+      setWorks((current) => [saved, ...current]);
     }
 
     setShowForm(false);
@@ -300,17 +306,17 @@ export default function AdminDashboard() {
     setEditingWork(null);
   };
 
+  /**
+   * LOGOUT
+   */
   const handleLogout = async () => {
     setLoggingOut(true);
 
     try {
-      const response = await fetch(
-        "/api/admin/logout",
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
       if (!response.ok) {
         throw new Error("Logout failed");
@@ -321,9 +327,7 @@ export default function AdminDashboard() {
     } catch {
       setLoggingOut(false);
 
-      alert(
-        "Unable to log out. Please try again."
-      );
+      alert("Unable to log out. Please try again.");
     }
   };
 
@@ -332,110 +336,121 @@ export default function AdminDashboard() {
       {/* =========================
           HEADER
       ========================== */}
-      {/* =========================
-    HEADER
-========================== */}
-<header className="border-b border-[#8C7355]/40 bg-white">
-  <div className="container-gallery">
-    {/* TOP HEADER */}
-    <div className="flex min-h-20 items-center justify-between gap-4 md:h-24">
-      <Link href="/" className="group shrink-0">
-        <div className="serif text-[22px] font-black tracking-[0.04em] sm:text-[26px]">
-          ETHIOPIA MAPS
+
+      <header className="border-b border-[#8C7355]/40 bg-white">
+        <div className="container-gallery">
+
+          {/* TOP HEADER */}
+          <div className="flex min-h-20 items-center justify-between gap-4 md:h-24">
+
+            <Link
+              href="/"
+              className="group shrink-0"
+            >
+              <div className="serif text-[22px] font-black tracking-[0.04em] sm:text-[26px]">
+                ETHIOPIA MAPS
+              </div>
+            </Link>
+
+            {/* DESKTOP ACTIONS */}
+            <div className="hidden items-center gap-6 md:flex">
+
+              <nav className="flex items-center gap-5">
+
+                <Link
+                  href="/admin/home"
+                  className="text-[12px] uppercase tracking-[0.16em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+                >
+                  Home
+                </Link>
+
+                <span className="h-1 w-1 rounded-full bg-black/20" />
+
+                <Link
+                  href="/admin"
+                  className="text-[12px] uppercase tracking-[0.16em] text-[var(--ochre)]"
+                >
+                  Collection
+                </Link>
+
+                <span className="h-1 w-1 rounded-full bg-black/20" />
+
+                <Link
+                  href="/admin/about"
+                  className="text-[12px] uppercase tracking-[0.16em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+                >
+                  About
+                </Link>
+
+              </nav>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="border border-black/15 px-5 py-2.5 text-[9px] font-medium uppercase tracking-[0.18em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loggingOut ? "Logging Out..." : "Log Out"}
+              </button>
+
+            </div>
+
+            {/* MOBILE LOGOUT */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="shrink-0 border border-black/15 px-3 py-2 text-[8px] font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
+            >
+              {loggingOut ? "Logging..." : "Log Out"}
+            </button>
+
+          </div>
+
+          {/* MOBILE NAVIGATION */}
+          <nav className="flex items-center justify-center gap-0 overflow-x-auto border-t border-black/5 md:hidden">
+
+            <Link
+              href="/admin/home"
+              className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+            >
+              Home
+            </Link>
+
+            <span className="h-1 w-1 shrink-0 rounded-full bg-black/20" />
+
+            <Link
+              href="/admin"
+              className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-[var(--ochre)]"
+            >
+              Collection
+            </Link>
+
+            <span className="h-1 w-1 shrink-0 rounded-full bg-black/20" />
+
+            <Link
+              href="/admin/about"
+              className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+            >
+              About
+            </Link>
+
+          </nav>
+
         </div>
-      </Link>
-
-      {/* DESKTOP ACTIONS */}
-      <div className="hidden items-center gap-6 md:flex">
-        <nav className="flex items-center gap-5">
-          <Link
-            href="/admin/home"
-            className="text-[12px] uppercase tracking-[0.16em] text-black/50 transition-colors hover:text-[var(--ochre)]"
-          >
-            Home
-          </Link>
-
-          <span className="h-1 w-1 rounded-full bg-black/20" />
-
-          <Link
-            href="/admin"
-            className="text-[12px] uppercase tracking-[0.16em] text-[var(--ochre)]"
-          >
-            Collection
-          </Link>
-
-          <span className="h-1 w-1 rounded-full bg-black/20" />
-
-          <Link
-            href="/admin/about"
-            className="text-[12px] uppercase tracking-[0.16em] text-black/50 transition-colors hover:text-[var(--ochre)]"
-          >
-            About
-          </Link>
-        </nav>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={loggingOut}
-          className="border border-black/15 px-5 py-2.5 text-[9px] font-medium uppercase tracking-[0.18em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loggingOut
-            ? "Logging Out..."
-            : "Log Out"}
-        </button>
-      </div>
-
-      {/* MOBILE LOGOUT */}
-      <button
-        type="button"
-        onClick={handleLogout}
-        disabled={loggingOut}
-        className="shrink-0 border border-black/15 px-3 py-2 text-[8px] font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
-      >
-        {loggingOut ? "Logging..." : "Log Out"}
-      </button>
-    </div>
-
-    {/* MOBILE NAVIGATION */}
-    <nav className="flex items-center justify-center gap-0 overflow-x-auto border-t border-black/5 md:hidden">
-      <Link
-        href="/admin/home"
-        className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:text-[var(--ochre)]"
-      >
-        Home
-      </Link>
-
-      <span className="h-1 w-1 shrink-0 rounded-full bg-black/20" />
-
-      <Link
-        href="/admin"
-        className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-[var(--ochre)]"
-      >
-        Collection
-      </Link>
-
-      <span className="h-1 w-1 shrink-0 rounded-full bg-black/20" />
-
-      <Link
-        href="/admin/about"
-        className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:text-[var(--ochre)]"
-      >
-        About
-      </Link>
-    </nav>
-  </div>
-</header>
+      </header>
 
       {/* =========================
           MAIN
       ========================== */}
+
       <section className="container-gallery pb-24 pt-10">
-        {/* =========================
-            PAGE INTRO
-        ========================== */}
+
+        {/* PAGE INTRO */}
         <div className="flex flex-col gap-8 border-b border-black/10 pb-8 md:flex-row md:items-end md:justify-between">
+
           <div>
+
             <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--ochre)]">
               Administration
             </p>
@@ -448,6 +463,7 @@ export default function AdminDashboard() {
               Manage the artworks displayed in
               the Ethiopia Maps collection.
             </p>
+
           </div>
 
           <button
@@ -460,13 +476,14 @@ export default function AdminDashboard() {
           >
             + Add Artwork
           </button>
+
         </div>
 
-        {/* =========================
-            STATISTICS
-        ========================== */}
+        {/* STATISTICS */}
         <div className="grid grid-cols-2 border-b border-black/10">
+
           <div className="border-r border-black/10 py-7 md:px-6">
+
             <p className="text-[9px] uppercase tracking-[0.18em] text-black/40">
               Total Works
             </p>
@@ -474,9 +491,11 @@ export default function AdminDashboard() {
             <p className="serif mt-2 text-3xl">
               {works.length}
             </p>
+
           </div>
 
           <div className="px-3 py-7 md:px-6">
+
             <p className="text-[9px] uppercase tracking-[0.18em] text-black/40">
               Available
             </p>
@@ -488,14 +507,16 @@ export default function AdminDashboard() {
                 ).length
               }
             </p>
+
           </div>
+
         </div>
 
-        {/* =========================
-            SEARCH
-        ========================== */}
+        {/* SEARCH */}
         <div className="my-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
           <div className="relative w-full sm:w-[300px]">
+
             <input
               type="text"
               placeholder="Search collection..."
@@ -503,8 +524,19 @@ export default function AdminDashboard() {
               onChange={(e) =>
                 setSearch(e.target.value)
               }
-              className="w-full rounded-sm border border-black/15 bg-white px-4 py-3 text-xs outline-none transition-colors placeholder:text-black/35 focus:border-[var(--ochre)]"
+              className="w-full rounded-sm border border-black/15 bg-white px-4 py-3 pr-10 text-xs outline-none transition-colors placeholder:text-black/35 focus:border-[var(--ochre)]"
             />
+
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-9 top-1/2 -translate-y-1/2 text-sm text-black/35 transition-colors hover:text-black"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
 
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -518,43 +550,57 @@ export default function AdminDashboard() {
               strokeLinejoin="round"
               className="absolute right-4 top-3.5 text-black/40"
             >
-              <circle cx="11" cy="11" r="8" />
+              <circle
+                cx="11"
+                cy="11"
+                r="8"
+              />
+
               <path d="m21 21-4.3-4.3" />
             </svg>
+
           </div>
 
           <p className="text-[9px] uppercase tracking-[0.18em] text-black/40">
-            {filteredWorks.length} works
+            {filteredWorks.length}{" "}
+            {filteredWorks.length === 1
+              ? "work"
+              : "works"}
           </p>
+
         </div>
 
-        {/* =========================
-            ERROR
-        ========================== */}
+        {/* ERROR */}
         {error && (
           <div className="mb-6 border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
             {error}
           </div>
         )}
 
-        {/* =========================
-            COLLECTION LIST
-        ========================== */}
+        {/* COLLECTION LIST */}
         <div className="border-t border-black/10">
+
           {loading ? (
             <div className="flex min-h-[30vh] items-center justify-center">
+
               <div className="text-center">
+
                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border border-black/10 border-t-[var(--ochre)]" />
 
                 <p className="mt-5 text-[10px] uppercase tracking-[0.2em] text-[var(--ochre)]">
                   Loading Collection
                 </p>
+
               </div>
+
             </div>
           ) : (
             filteredWorks.map((work) => {
+
               const prices = work.sizes
-                .map((item) => item.price)
+                .map(
+                  (item) => item.price
+                )
                 .filter(
                   (price) =>
                     typeof price === "number" &&
@@ -571,8 +617,10 @@ export default function AdminDashboard() {
                   key={work._id}
                   className="group flex flex-col gap-5 border-b border-black/10 py-6 transition-colors hover:bg-black/[0.015] md:flex-row md:items-center"
                 >
+
                   {/* IMAGE */}
                   <div className="relative h-28 w-full overflow-hidden rounded-sm bg-[var(--warm-paper)] md:h-24 md:w-20 md:shrink-0">
+
                     <Image
                       src={
                         work.images[0]?.url ||
@@ -582,12 +630,16 @@ export default function AdminDashboard() {
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
+
                   </div>
 
                   {/* INFO */}
                   <div className="flex-1">
+
                     <div className="flex items-start justify-between gap-4">
+
                       <div>
+
                         <h2 className="serif text-2xl">
                           {work.title}
                         </h2>
@@ -595,12 +647,14 @@ export default function AdminDashboard() {
                         <p className="mt-1 text-[9px] uppercase tracking-[0.15em] text-black/40">
                           {work.year}
                         </p>
+
                       </div>
 
                       <p className="serif text-xl">
                         ETB{" "}
                         {startingPrice.toLocaleString()}
                       </p>
+
                     </div>
 
                     <p className="mt-3 max-w-xl text-xs leading-6 text-black/45">
@@ -609,13 +663,19 @@ export default function AdminDashboard() {
 
                     {/* SIZE OPTIONS */}
                     <div className="mt-4 flex flex-wrap gap-2">
+
                       {work.sizes.map(
-                        (option, index) => (
+                        (
+                          option,
+                          index
+                        ) => (
                           <div
                             key={`${option.size}-${index}`}
                             className="border border-black/10 bg-white px-3 py-2"
                           >
+
                             <div className="flex items-center gap-2">
+
                               <span className="text-[8px] uppercase tracking-[0.12em] text-black/50">
                                 {option.size}
                               </span>
@@ -624,22 +684,24 @@ export default function AdminDashboard() {
                                 ETB{" "}
                                 {option.price.toLocaleString()}
                               </span>
+
                             </div>
 
                             {option.description && (
                               <p className="mt-1 text-[8px] leading-4 text-black/35">
-                                {
-                                  option.description
-                                }
+                                {option.description}
                               </p>
                             )}
+
                           </div>
                         )
                       )}
+
                     </div>
 
                     {/* STATUS */}
                     <div className="mt-4 flex flex-wrap items-center gap-2">
+
                       <span
                         className={`inline-flex px-3 py-1 text-[8px] uppercase tracking-[0.15em] ${
                           work.type === "local"
@@ -663,11 +725,14 @@ export default function AdminDashboard() {
                           ? "Available"
                           : "Sold"}
                       </span>
+
                     </div>
+
                   </div>
 
                   {/* ACTIONS */}
                   <div className="flex gap-3 md:ml-6">
+
                     <button
                       type="button"
                       onClick={() =>
@@ -687,7 +752,9 @@ export default function AdminDashboard() {
                     >
                       Remove
                     </button>
+
                   </div>
+
                 </div>
               );
             })
@@ -696,22 +763,26 @@ export default function AdminDashboard() {
           {!loading &&
             filteredWorks.length === 0 && (
               <div className="py-20 text-center">
+
                 <p className="serif text-2xl">
-                  No artworks found.
+                  {search.trim()
+                    ? `No artwork found for "${search.trim()}".`
+                    : "No artworks found."}
                 </p>
 
                 <p className="mt-2 text-xs text-black/40">
-                  Try another search or add a new
-                  artwork.
+                  {search.trim()
+                    ? "Try searching for another artwork title."
+                    : "Try another search or add a new artwork."}
                 </p>
+
               </div>
             )}
+
         </div>
       </section>
 
-      {/* =========================
-          ARTWORK FORM
-      ========================== */}
+      {/* ARTWORK FORM */}
       {showForm && (
         <ArtworkForm
           artwork={editingWork}
@@ -720,14 +791,15 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* =========================
-          DELETE CONFIRMATION MODAL
-      ========================== */}
+      {/* DELETE CONFIRMATION MODAL */}
       {deleteWork && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+
           <div className="w-full max-w-md rounded-sm bg-[#FAF9F6] shadow-2xl">
+
             {/* Modal Header */}
             <div className="border-b border-black/10 px-6 py-5 md:px-8">
+
               <p className="text-[9px] uppercase tracking-[0.2em] text-red-600">
                 Remove Artwork
               </p>
@@ -735,10 +807,12 @@ export default function AdminDashboard() {
               <h2 className="serif mt-2 text-3xl">
                 Are you sure?
               </h2>
+
             </div>
 
             {/* Modal Content */}
             <div className="px-6 py-7 md:px-8">
+
               <p className="text-sm leading-6 text-black/55">
                 You are about to remove{" "}
                 <span className="font-medium text-black">
@@ -749,17 +823,16 @@ export default function AdminDashboard() {
 
               <p className="mt-3 text-xs leading-5 text-black/40">
                 This action cannot be undone.
-                The artwork will no longer appear
-                on the website.
+                The artwork will no longer
+                appear on the website.
               </p>
 
               {/* Modal Actions */}
               <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
                 <button
                   type="button"
-                  onClick={() =>
-                    setDeleteWork(null)
-                  }
+                  onClick={() => setDeleteWork(null)}
                   disabled={deleting}
                   className="border border-black/15 px-6 py-3 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:border-black/30 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -776,17 +849,20 @@ export default function AdminDashboard() {
                     ? "Removing..."
                     : "Yes, Remove"}
                 </button>
+
               </div>
+
             </div>
+
           </div>
         </div>
       )}
 
-      {/* =========================
-          FOOTER
-      ========================== */}
+      {/* FOOTER */}
       <footer className="border-t border-black/10 py-7">
+
         <div className="container-gallery flex flex-col items-center justify-between gap-3 md:flex-row">
+
           <p className="text-[8px] uppercase tracking-[0.2em] text-black/30">
             Ethiopia Maps - Administration
           </p>
@@ -797,7 +873,9 @@ export default function AdminDashboard() {
           >
             Return to Website
           </Link>
+
         </div>
+
       </footer>
     </main>
   );
@@ -813,7 +891,9 @@ function ArtworkForm({
   onCancel,
 }: {
   artwork: Artwork | null;
-  onSave: (work: ArtworkPayload) => Promise<void>;
+  onSave: (
+    work: ArtworkPayload
+  ) => Promise<void>;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState(
@@ -821,14 +901,18 @@ function ArtworkForm({
   );
 
   const [description, setDescription] =
-    useState(artwork?.description ?? "");
+    useState(
+      artwork?.description ?? ""
+    );
 
   const [year, setYear] = useState(
     artwork?.year.toString() ?? ""
   );
 
   const [available, setAvailable] =
-    useState(artwork?.available ?? true);
+    useState(
+      artwork?.available ?? true
+    );
 
   const [market, setMarket] =
     useState<ArtworkMarket>(
@@ -856,8 +940,11 @@ function ArtworkForm({
       ]
     );
 
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [saving, setSaving] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   const handleAddSize = () => {
     setSizes((current) => [
@@ -870,7 +957,9 @@ function ArtworkForm({
     ]);
   };
 
-  const handleRemoveSize = (index: number) => {
+  const handleRemoveSize = (
+    index: number
+  ) => {
     if (sizes.length === 1) return;
 
     setSizes((current) =>
@@ -890,23 +979,27 @@ function ArtworkForm({
     value: string
   ) => {
     setSizes((current) =>
-      current.map((item, sizeIndex) => {
-        if (sizeIndex !== index) {
-          return item;
-        }
+      current.map(
+        (item, sizeIndex) => {
+          if (
+            sizeIndex !== index
+          ) {
+            return item;
+          }
 
-        if (field === "price") {
+          if (field === "price") {
+            return {
+              ...item,
+              price: Number(value),
+            };
+          }
+
           return {
             ...item,
-            price: Number(value),
+            [field]: value,
           };
         }
-
-        return {
-          ...item,
-          [field]: value,
-        };
-      })
+      )
     );
   };
 
@@ -918,27 +1011,34 @@ function ArtworkForm({
 
     setError("");
 
-    setUploadingImages((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index
-          ? true
-          : item
-      )
+    setUploadingImages(
+      (current) =>
+        current.map(
+          (item, itemIndex) =>
+            itemIndex === index
+              ? true
+              : item
+        )
     );
 
     try {
-      const formData = new FormData();
+      const formData =
+        new FormData();
 
-      formData.append("file", file);
-
-      const response = await fetch(
-        "/api/upload",
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }
+      formData.append(
+        "file",
+        file
       );
+
+      const response =
+        await fetch(
+          "/api/upload",
+          {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          }
+        );
 
       if (
         response.status === 401 ||
@@ -950,7 +1050,8 @@ function ArtworkForm({
         return;
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -960,21 +1061,25 @@ function ArtworkForm({
         );
       }
 
-      if (!data.url || !data.publicId) {
+      if (
+        !data.url ||
+        !data.publicId
+      ) {
         throw new Error(
           "Upload succeeded but no image information was returned."
         );
       }
 
       setImages((current) =>
-        current.map((item, itemIndex) =>
-          itemIndex === index
-            ? {
-                url: data.url,
-                publicId:
-                  data.publicId,
-              }
-            : item
+        current.map(
+          (item, itemIndex) =>
+            itemIndex === index
+              ? {
+                  url: data.url,
+                  publicId:
+                    data.publicId,
+                }
+              : item
         )
       );
     } catch (err) {
@@ -984,12 +1089,14 @@ function ArtworkForm({
           : "Image upload failed."
       );
     } finally {
-      setUploadingImages((current) =>
-        current.map((item, itemIndex) =>
-          itemIndex === index
-            ? false
-            : item
-        )
+      setUploadingImages(
+        (current) =>
+          current.map(
+            (item, itemIndex) =>
+              itemIndex === index
+                ? false
+                : item
+          )
       );
     }
   };
@@ -998,20 +1105,25 @@ function ArtworkForm({
     e: React.FormEvent
   ) => {
     e.preventDefault();
+
     setError("");
 
-    const validSizes = sizes.filter(
-      (option) =>
-        option.size.trim() !== "" &&
-        option.description.trim() !== "" &&
-        option.price > 0
-    );
+    const validSizes =
+      sizes.filter(
+        (option) =>
+          option.size.trim() !==
+            "" &&
+          option.description.trim() !==
+            "" &&
+          option.price > 0
+      );
 
-    const uploadedImages = images.filter(
-      (image) =>
-        image.url.trim() !== "" &&
-        image.publicId.trim() !== ""
-    );
+    const uploadedImages =
+      images.filter(
+        (image) =>
+          image.url.trim() !== "" &&
+          image.publicId.trim() !== ""
+      );
 
     if (
       !title.trim() ||
@@ -1043,7 +1155,8 @@ function ArtworkForm({
       await onSave({
         slug: slugify(title),
         title: title.trim(),
-        description: description.trim(),
+        description:
+          description.trim(),
         year: Number(year),
         available,
         type: market,
@@ -1063,10 +1176,14 @@ function ArtworkForm({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm">
+
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-sm bg-[#FAF9F6] shadow-2xl">
+
         {/* FORM HEADER */}
         <div className="flex items-center justify-between border-b border-black/10 px-6 py-5 md:px-8">
+
           <div>
+
             <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--ochre)]">
               {artwork
                 ? "Edit Artwork"
@@ -1078,6 +1195,7 @@ function ArtworkForm({
                 ? artwork.title
                 : "Add to Collection"}
             </h2>
+
           </div>
 
           <button
@@ -1088,12 +1206,14 @@ function ArtworkForm({
           >
             ×
           </button>
+
         </div>
 
         <form
           onSubmit={handleSubmit}
           className="space-y-6 px-6 py-7 md:px-8"
         >
+
           {error && (
             <div className="border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
               {error}
@@ -1102,6 +1222,7 @@ function ArtworkForm({
 
           {/* TITLE */}
           <div>
+
             <label className="mb-2 block text-[9px] uppercase tracking-[0.18em] text-black/50">
               Artwork Title
             </label>
@@ -1109,15 +1230,19 @@ function ArtworkForm({
             <input
               value={title}
               onChange={(e) =>
-                setTitle(e.target.value)
+                setTitle(
+                  e.target.value
+                )
               }
               placeholder="e.g. Addis"
               className="w-full rounded-sm border border-black/15 bg-white px-3 py-3 text-sm outline-none focus:border-[var(--ochre)]"
             />
+
           </div>
 
           {/* DESCRIPTION */}
           <div>
+
             <label className="mb-2 block text-[9px] uppercase tracking-[0.18em] text-black/50">
               Description
             </label>
@@ -1133,10 +1258,12 @@ function ArtworkForm({
               rows={4}
               className="w-full resize-none rounded-sm border border-black/15 bg-white px-3 py-3 text-sm outline-none focus:border-[var(--ochre)]"
             />
+
           </div>
 
           {/* YEAR */}
           <div>
+
             <label className="mb-2 block text-[9px] uppercase tracking-[0.18em] text-black/50">
               Year
             </label>
@@ -1145,15 +1272,19 @@ function ArtworkForm({
               type="number"
               value={year}
               onChange={(e) =>
-                setYear(e.target.value)
+                setYear(
+                  e.target.value
+                )
               }
               placeholder="2026"
               className="w-full rounded-sm border border-black/15 bg-white px-3 py-3 text-sm outline-none focus:border-[var(--ochre)]"
             />
+
           </div>
 
           {/* COLLECTION */}
           <div className="border-t border-black/10 pt-6">
+
             <label className="block text-[9px] uppercase tracking-[0.18em] text-black/50">
               Collection
             </label>
@@ -1165,6 +1296,7 @@ function ArtworkForm({
             </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
+
               <label
                 className={`flex cursor-pointer items-center gap-3 border px-4 py-4 transition-colors ${
                   market === "local"
@@ -1172,20 +1304,25 @@ function ArtworkForm({
                     : "border-black/10 bg-white hover:border-black/25"
                 }`}
               >
+
                 <input
                   type="radio"
                   name="market"
                   value="local"
                   checked={
-                    market === "local"
+                    market ===
+                    "local"
                   }
                   onChange={() =>
-                    setMarket("local")
+                    setMarket(
+                      "local"
+                    )
                   }
                   className="h-4 w-4 accent-[var(--ochre)]"
                 />
 
                 <div>
+
                   <p className="text-[10px] font-medium uppercase tracking-[0.15em]">
                     Local
                   </p>
@@ -1193,16 +1330,20 @@ function ArtworkForm({
                   <p className="mt-1 text-[9px] text-black/40">
                     Ethiopian collection
                   </p>
+
                 </div>
+
               </label>
 
               <label
                 className={`flex cursor-pointer items-center gap-3 border px-4 py-4 transition-colors ${
-                  market === "international"
+                  market ===
+                  "international"
                     ? "border-[var(--ochre)] bg-[#E9E3D7]/40"
                     : "border-black/10 bg-white hover:border-black/25"
                 }`}
               >
+
                 <input
                   type="radio"
                   name="market"
@@ -1220,6 +1361,7 @@ function ArtworkForm({
                 />
 
                 <div>
+
                   <p className="text-[10px] font-medium uppercase tracking-[0.15em]">
                     International
                   </p>
@@ -1227,13 +1369,18 @@ function ArtworkForm({
                   <p className="mt-1 text-[9px] text-black/40">
                     International collection
                   </p>
+
                 </div>
+
               </label>
+
             </div>
+
           </div>
 
           {/* IMAGES */}
           <div className="border-t border-black/10 pt-6">
+
             <label className="block text-[9px] uppercase tracking-[0.18em] text-black/50">
               Artwork Images
             </label>
@@ -1244,13 +1391,16 @@ function ArtworkForm({
             </p>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
+
               {images.map(
                 (image, index) => (
                   <div
                     key={index}
                     className="border border-black/10 bg-white p-3"
                   >
+
                     <div className="relative aspect-[4/5] overflow-hidden bg-[var(--warm-paper)]">
+
                       {image.url ? (
                         <Image
                           src={image.url}
@@ -1266,9 +1416,11 @@ function ArtworkForm({
                           {index + 1}
                         </div>
                       )}
+
                     </div>
 
                     <label className="mt-3 block cursor-pointer border border-black/15 px-3 py-2 text-center text-[8px] uppercase tracking-[0.15em] transition-colors hover:border-[var(--ochre)] hover:text-[var(--ochre)]">
+
                       {uploadingImages[
                         index
                       ]
@@ -1297,17 +1449,24 @@ function ArtworkForm({
                           )
                         }
                       />
+
                     </label>
+
                   </div>
                 )
               )}
+
             </div>
+
           </div>
 
           {/* SIZES */}
           <div className="border-t border-black/10 pt-6">
+
             <div className="mb-4 flex items-end justify-between gap-4">
+
               <div>
+
                 <label className="block text-[9px] uppercase tracking-[0.18em] text-black/50">
                   Size Options & Prices
                 </label>
@@ -1316,6 +1475,7 @@ function ArtworkForm({
                   Add the available sizes,
                   descriptions, and ETB prices.
                 </p>
+
               </div>
 
               <button
@@ -1325,17 +1485,25 @@ function ArtworkForm({
               >
                 + Add Size
               </button>
+
             </div>
 
             <div className="space-y-5">
+
               {sizes.map(
-                (option, index) => (
+                (
+                  option,
+                  index
+                ) => (
                   <div
                     key={index}
                     className="border border-black/10 bg-white p-4"
                   >
+
                     <div className="flex items-end gap-3">
+
                       <div className="flex-1">
+
                         <label className="mb-2 block text-[8px] uppercase tracking-[0.15em] text-black/40">
                           Size
                         </label>
@@ -1349,21 +1517,23 @@ function ArtworkForm({
                             handleSizeChange(
                               index,
                               "size",
-                              e.target
-                                .value
+                              e.target.value
                             )
                           }
                           placeholder="A4 / A3 / A2"
                           className="w-full rounded-sm border border-black/15 bg-[#FAF9F6] px-3 py-3 text-sm outline-none focus:border-[var(--ochre)]"
                         />
+
                       </div>
 
                       <div className="w-[150px]">
+
                         <label className="mb-2 block text-[8px] uppercase tracking-[0.15em] text-black/40">
                           Price - ETB
                         </label>
 
                         <div className="relative">
+
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] text-black/35">
                             ETB
                           </span>
@@ -1375,20 +1545,19 @@ function ArtworkForm({
                               option.price ||
                               ""
                             }
-                            onChange={(
-                              e
-                            ) =>
+                            onChange={(e) =>
                               handleSizeChange(
                                 index,
                                 "price",
-                                e.target
-                                  .value
+                                e.target.value
                               )
                             }
                             placeholder="150"
                             className="w-full rounded-sm border border-black/15 bg-[#FAF9F6] py-3 pl-12 pr-3 text-sm outline-none focus:border-[var(--ochre)]"
                           />
+
                         </div>
+
                       </div>
 
                       <button
@@ -1406,9 +1575,11 @@ function ArtworkForm({
                       >
                         ×
                       </button>
+
                     </div>
 
                     <div className="mt-4">
+
                       <label className="mb-2 block text-[8px] uppercase tracking-[0.15em] text-black/40">
                         Size Description
                       </label>
@@ -1421,23 +1592,27 @@ function ArtworkForm({
                           handleSizeChange(
                             index,
                             "description",
-                            e.target
-                              .value
+                            e.target.value
                           )
                         }
                         placeholder="e.g. 210 x 297 mm, archival paper, suitable for smaller spaces..."
                         rows={2}
                         className="w-full resize-none rounded-sm border border-black/15 bg-[#FAF9F6] px-3 py-3 text-sm outline-none focus:border-[var(--ochre)]"
                       />
+
                     </div>
+
                   </div>
                 )
               )}
+
             </div>
+
           </div>
 
           {/* AVAILABILITY */}
           <label className="flex cursor-pointer items-center gap-3 border-t border-black/10 pt-5">
+
             <input
               type="checkbox"
               checked={available}
@@ -1452,10 +1627,12 @@ function ArtworkForm({
             <span className="text-sm">
               Artwork is available
             </span>
+
           </label>
 
           {/* FORM ACTIONS */}
           <div className="flex flex-col-reverse gap-3 border-t border-black/10 pt-6 sm:flex-row sm:justify-end">
+
             <button
               type="button"
               onClick={onCancel}
@@ -1468,9 +1645,7 @@ function ArtworkForm({
               type="submit"
               disabled={
                 saving ||
-                uploadingImages.some(
-                  Boolean
-                )
+                uploadingImages.some(Boolean)
               }
               className="bg-[var(--ochre)] px-7 py-3 text-[9px] font-medium uppercase tracking-[0.18em] text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -1480,9 +1655,13 @@ function ArtworkForm({
                   ? "Save Changes"
                   : "Add Artwork"}
             </button>
+
           </div>
+
         </form>
+
       </div>
+
     </div>
   );
 }
