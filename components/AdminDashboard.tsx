@@ -332,32 +332,100 @@ export default function AdminDashboard() {
       {/* =========================
           HEADER
       ========================== */}
-      <header className="border-b border-[#8C7355]/40 bg-white">
-        <div className="container-gallery flex h-24 items-center justify-between">
-          <Link href="/" className="group">
-            <div className="serif text-[26px] font-black tracking-[0.04em]">
-              ETHIOPIA MAPS
-            </div>
+      {/* =========================
+    HEADER
+========================== */}
+<header className="border-b border-[#8C7355]/40 bg-white">
+  <div className="container-gallery">
+    {/* TOP HEADER */}
+    <div className="flex min-h-20 items-center justify-between gap-4 md:h-24">
+      <Link href="/" className="group shrink-0">
+        <div className="serif text-[22px] font-black tracking-[0.04em] sm:text-[26px]">
+          ETHIOPIA MAPS
+        </div>
+      </Link>
+
+      {/* DESKTOP ACTIONS */}
+      <div className="hidden items-center gap-6 md:flex">
+        <nav className="flex items-center gap-5">
+          <Link
+            href="/admin/home"
+            className="text-[12px] uppercase tracking-[0.16em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+          >
+            Home
           </Link>
 
-          <div className="flex items-center gap-6">
-            <span className="hidden text-[9px] uppercase tracking-[0.18em] text-black/40 sm:block">
-              Administration
-            </span>
+          <span className="h-1 w-1 rounded-full bg-black/20" />
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="border border-black/15 px-5 py-2.5 text-[9px] font-medium uppercase tracking-[0.18em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loggingOut
-                ? "Logging Out..."
-                : "Log Out"}
-            </button>
-          </div>
-        </div>
-      </header>
+          <Link
+            href="/admin"
+            className="text-[12px] uppercase tracking-[0.16em] text-[var(--ochre)]"
+          >
+            Collection
+          </Link>
+
+          <span className="h-1 w-1 rounded-full bg-black/20" />
+
+          <Link
+            href="/admin/about"
+            className="text-[12px] uppercase tracking-[0.16em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+          >
+            About
+          </Link>
+        </nav>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="border border-black/15 px-5 py-2.5 text-[9px] font-medium uppercase tracking-[0.18em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loggingOut
+            ? "Logging Out..."
+            : "Log Out"}
+        </button>
+      </div>
+
+      {/* MOBILE LOGOUT */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={loggingOut}
+        className="shrink-0 border border-black/15 px-3 py-2 text-[8px] font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:border-[var(--ochre)] hover:text-[var(--ochre)] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
+      >
+        {loggingOut ? "Logging..." : "Log Out"}
+      </button>
+    </div>
+
+    {/* MOBILE NAVIGATION */}
+    <nav className="flex items-center justify-center gap-0 overflow-x-auto border-t border-black/5 md:hidden">
+      <Link
+        href="/admin/home"
+        className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+      >
+        Home
+      </Link>
+
+      <span className="h-1 w-1 shrink-0 rounded-full bg-black/20" />
+
+      <Link
+        href="/admin"
+        className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-[var(--ochre)]"
+      >
+        Collection
+      </Link>
+
+      <span className="h-1 w-1 shrink-0 rounded-full bg-black/20" />
+
+      <Link
+        href="/admin/about"
+        className="flex min-h-12 items-center px-4 text-[9px] uppercase tracking-[0.15em] text-black/50 transition-colors hover:text-[var(--ochre)]"
+      >
+        About
+      </Link>
+    </nav>
+  </div>
+</header>
 
       {/* =========================
           MAIN

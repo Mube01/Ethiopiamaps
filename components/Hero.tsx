@@ -1,11 +1,59 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+const DEFAULT_TAGLINE =
+  "Beautifully crafted maps celebrating\nEthiopia & Africa's cities.";
+
 export default function Hero() {
+  const [tagline, setTagline] =
+    useState(DEFAULT_TAGLINE);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadContent = async () => {
+      try {
+        const response = await fetch(
+          "/api/site-content",
+          {
+            cache: "no-store",
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        if (
+          active &&
+          typeof data.homeTagline === "string" &&
+          data.homeTagline.trim()
+        ) {
+          setTagline(data.homeTagline);
+        }
+      } catch {
+        // Keep default tagline if loading fails.
+      }
+    };
+
+    loadContent();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const taglineLines = tagline
+    .split(/\r?\n/)
+    .filter((line) => line.trim());
+
   return (
     <section className="relative h-screen min-h-[700px] overflow-hidden bg-[var(--deep-earth)]">
       <Image
@@ -21,24 +69,41 @@ export default function Hero() {
 
       {/* Centered navigation + CTA */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.3 }}
+        initial={{
+          opacity: 0,
+          y: 20,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 1,
+          delay: 0.3,
+        }}
         className="absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
       >
-        {/* Title */}
+        {/* TITLE */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
+          initial={{
+            opacity: 0,
+            y: 20,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 1,
+          }}
           className="flex flex-col items-center text-center"
         >
           <h1 className="serif whitespace-nowrap text-[clamp(48px,6vw,78px)] font-normal leading-none tracking-[-0.035em] text-white">
             ETHIOPIA MAPS
           </h1>
 
-          {/* Gold divider */}
-          <div className="mt-7 flex w-full items-center justify-center gap-5">
+          {/* GOLD DIVIDER */}
+          <div className="mt-2 flex w-full items-center justify-center gap-5">
             <div className="h-px w-28 bg-[var(--ochre)] md:w-40" />
 
             <div className="relative flex h-3 w-3 items-center justify-center">
@@ -48,13 +113,24 @@ export default function Hero() {
             <div className="h-px w-28 bg-[var(--ochre)] md:w-40" />
           </div>
 
-          {/* Tagline */}
-          <p className="mt-8 max-w-[700px] text-center text-[12px] font-medium uppercase leading-[2] tracking-[0.24em] text-[var(--ochre)] md:text-[15px]">
-            Beautifully crafted maps celebrating<br /> Ethiopia and Africa&apos;s cities.
+          {/* EDITABLE TAGLINE */}
+          <p className="mt-3 max-w-[700px] text-center text-[12px] font-medium uppercase leading-[2] tracking-[0.24em] text-[var(--ochre)] md:text-[15px]">
+            {taglineLines.map(
+              (line, index) => (
+                <span key={index}>
+                  {line}
+
+                  {index <
+                    taglineLines.length - 1 && (
+                    <br />
+                  )}
+                </span>
+              )
+            )}
           </p>
         </motion.div>
 
-        {/* Navigation */}
+        {/* NAVIGATION */}
         <nav className="mt-8 flex items-center gap-8">
           <Link
             href="/about"
@@ -82,24 +158,37 @@ export default function Hero() {
           </Link>
         </nav>
 
-        {/* Explore button */}
+        {/* EXPLORE BUTTON */}
         <Link
           href="/shop"
           className="mt-7 inline-flex items-center gap-5 rounded-lg border border-[var(--ochre)] bg-black/70 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white transition-colors hover:bg-[var(--ochre)]"
         >
-          Explore the Collection
-          <ArrowRight size={14} strokeWidth={1.5} />
+          Explore our Collection
+
+          <ArrowRight
+            size={14}
+            strokeWidth={1.5}
+          />
         </Link>
       </motion.div>
 
-      {/* Social Media */}
+      {/* SOCIAL MEDIA */}
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.8 }}
+        initial={{
+          opacity: 0,
+          y: 15,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 1,
+          delay: 0.8,
+        }}
         className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-8"
       >
-        {/* Instagram */}
+        {/* INSTAGRAM */}
         <a
           href="https://www.instagram.com/nahom.22?igsh=eHMzc25ocGJ6dXF5"
           target="_blank"
@@ -116,8 +205,20 @@ export default function Hero() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <rect x="3" y="3" width="18" height="18" rx="5" />
-            <circle cx="12" cy="12" r="4" />
+            <rect
+              x="3"
+              y="3"
+              width="18"
+              height="18"
+              rx="5"
+            />
+
+            <circle
+              cx="12"
+              cy="12"
+              r="4"
+            />
+
             <circle
               cx="17.5"
               cy="6.5"
@@ -128,7 +229,7 @@ export default function Hero() {
           </svg>
         </a>
 
-        {/* LinkedIn */}
+        {/* LINKEDIN */}
         <a
           href="https://www.linkedin.com/company/ethiopia-maps/"
           target="_blank"
@@ -145,7 +246,7 @@ export default function Hero() {
           </svg>
         </a>
 
-        {/* Behance */}
+        {/* BEHANCE */}
         <a
           href="https://www.behance.net/ethiopiamaps"
           target="_blank"
@@ -163,14 +264,18 @@ export default function Hero() {
             strokeLinejoin="round"
           >
             <path d="M2 3h6.2c2.7 0 4.3 1.4 4.3 3.5 0 1.5-.8 2.6-2.1 3.1 1.7.5 2.7 1.7 2.7 3.5 0 2.6-1.9 4.1-4.8 4.1H2V3Z" />
+
             <path d="M5.5 5.8v2.6h2.3c1.1 0 1.7-.5 1.7-1.3 0-.9-.6-1.3-1.7-1.3H5.5Z" />
+
             <path d="M5.5 11v2.7H8c1.2 0 1.8-.5 1.8-1.4S9.2 11 8 11H5.5Z" />
+
             <path d="M15 7h4" />
+
             <path d="M14.5 12.2h7.1c.1-2.7-1.5-4.7-4.2-4.7-2.8 0-4.6 1.9-4.6 4.6 0 2.8 1.9 4.6 4.7 4.6 1.8 0 3.3-.7 4-2" />
           </svg>
         </a>
 
-        {/* Pinterest */}
+        {/* PINTEREST */}
         <a
           href="https://pin.it/3k2SCwtUB"
           target="_blank"

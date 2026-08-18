@@ -15,7 +15,7 @@ export default function Footer() {
             </div>
 
             <p className="mt-4 max-w-xs text-[15px] leading-6 text-[#999]">
-              Discover the beauty, history, and landscapes of Ethiopia through
+              Discover the beauty, history, and landscapes of Ethiopia & Africa through
               carefully curated maps and artwork.
             </p>
           </div>
@@ -69,13 +69,50 @@ export default function Footer() {
 
             <div className="mt-5 flex flex-col gap-3">
 
-              {/* Email */}
-              <a
-                href="mailto:hello@ethiopiamaps.com"
-                className="text-[15px] text-[#999] transition-colors hover:text-white"
-              >
-                hello@ethiopiamaps.com
-              </a>
+  {/* Email */}
+  <a
+    href="mailto:hello@ethiopiamaps.com"
+    className="flex items-center gap-3 text-[15px] text-[#999] transition-colors hover:text-white"
+  >
+    {/* Email Icon */}
+    <svg
+      className="h-5 w-5 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+
+    hello@ethiopiamaps.com
+  </a>
+
+  {/* Phone */}
+  <a
+    href="tel:+251929451813"
+    className="flex items-center gap-3 text-[15px] text-[#999] transition-colors hover:text-white"
+  >
+    {/* Phone Icon */}
+    <svg
+      className="h-5 w-5 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z" />
+    </svg>
+
+    +251 929 45 18 13
+  </a>
 
               {/* =================================================
                   SOCIAL MEDIA
